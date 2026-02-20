@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================
+// USER & WORKSPACE
+// ============================================
+
+model User {
+  id              String    @id @default(cuid())
+  supabaseId      String    @unique @map("supabase_id")
+  email           String    @unique
+  name            String?
+  avatarUrl       String?   @map("avatar_url")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  ownedWorkspaces Workspace[]    @relation("WorkspaceOwner")
+  teamMembers     TeamMember[]
+  subscription    Subscription?
+
+  @@map("users")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  ownerId   String   @map("owner_id")
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  owner     User          @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members   TeamMember[]
+  projects  Project[]
+
+  @@map("workspaces")
+}
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  role        Role     @default(VIEWER)
+  invitedAt   DateTime @default(now()) @map("invited_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("team_members")
+}
+
+// ============================================
+// PROJECTS & ANALYSES
+// ============================================
+
+model Project {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  name        String
+  url         String
+  domain      String
+  description String?
+  favicon     String?
+  settings    Json     @default("{\"crawlDepth\": 2, \"maxPages\": 50, \"viewports\": [1440, 768, 375]}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  analyses  Analysis[]
+
+  @@map("projects")
+}
+
+model Analysis {
+  id            String         @id @default(cuid())
+  projectId     String         @map("project_id")
+  status        AnalysisStatus @default(QUEUED)
+  config        Json           @default("{\"crawlDepth\": 2, \"maxPages\": 50}")
+  overallScore  Int?           @map("overall_score")
+  scores        Json?
+  pagesFound    Int            @default(0) @map("pages_found")
+  pagesCrawled  Int            @default(0) @map("pages_crawled")
+  pagesAnalyzed Int            @default(0) @map("pages_analyzed")
+  startedAt     DateTime?      @map("started_at")
+  completedAt   DateTime?      @map("completed_at")
+  errorMessage  String?        @map("error_message")
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pageResults PageResult[]
+  report      Report?
+  crawlJob    CrawlJob?
+
+  @@map("analyses")
+}
+
+model CrawlJob {
+  id           String    @id @default(cuid())
+  analysisId   String    @unique @map("analysis_id")
+  status       JobStatus @default(PENDING)
+  pagesFound   Int       @default(0) @map("pages_found")
+  pagesCrawled Int       @default(0) @map("pages_crawled")
+  errors       Json      @default("[]")
+  startedAt    DateTime? @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@map("crawl_jobs")
+}
+
+model PageResult {
+  id           String   @id @default(cuid())
+  analysisId   String   @map("analysis_id")
+  url          String
+  path         String
+  title        String?
+  statusCode   Int      @map("status_code")
+  scores       Json?
+  overallScore Int?     @map("overall_score")
+  contentJson  Json?    @map("content_json")
+  aiAnalysis   Json?    @map("ai_analysis")
+  pageType     String?  @map("page_type")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  analysis    Analysis     @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  screenshots Screenshot[]
+  findings    Finding[]
+
+  @@map("page_results")
+}
+
+model Screenshot {
+  id           String   @id @default(cuid())
+  pageResultId String   @map("page_result_id")
+  viewport     Int
+  r2Key        String   @map("r2_key")
+  r2Url        String   @map("r2_url")
+  width        Int
+  height       Int
+  fileSize     Int      @map("file_size")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  pageResult PageResult @relation(fields: [pageResultId], references: [id], onDelete: Cascade)
+
+  @@map("screenshots")
+}
+
+model Finding {
+  id           String          @id @default(cuid())
+  pageResultId String          @map("page_result_id")
+  category     FindingCategory
+  severity     Severity
+  title        String
+  description  String
+  location     String?
+  evidence     String?
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  pageResult     PageResult      @relation(fields: [pageResultId], references: [id], onDelete: Cascade)
+  recommendation Recommendation?
+
+  @@map("findings")
+}
+
+model Recommendation {
+  id             String   @id @default(cuid())
+  findingId      String   @unique @map("finding_id")
+  priority       Priority
+  action         String
+  expectedImpact String   @map("expected_impact")
+  effort         Effort
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  finding Finding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+
+  @@map("recommendations")
+}
+
+// ============================================
+// REPORTS
+// ============================================
+
+model Report {
+  id         String   @id @default(cuid())
+  analysisId String   @unique @map("analysis_id")
+  pdfR2Key   String?  @map("pdf_r2_key")
+  pdfUrl     String?  @map("pdf_url")
+  excelR2Key String?  @map("excel_r2_key")
+  excelUrl   String?  @map("excel_url")
+  shareToken String?  @unique @map("share_token")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+// ============================================
+// BILLING
+// ============================================
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  userId             String             @unique @map("user_id")
+  stripeCustomerId   String?            @unique @map("stripe_customer_id")
+  stripeSubId        String?            @unique @map("stripe_sub_id")
+  stripePriceId      String?            @map("stripe_price_id")
+  plan               Plan               @default(FREE)
+  status             SubscriptionStatus @default(ACTIVE)
+  analysesUsed       Int                @default(0) @map("analyses_used")
+  analysesLimit      Int                @default(3) @map("analyses_limit")
+  currentPeriodStart DateTime?          @map("current_period_start")
+  currentPeriodEnd   DateTime?          @map("current_period_end")
+  cancelAtPeriodEnd  Boolean            @default(false) @map("cancel_at_period_end")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum AnalysisStatus {
+  QUEUED
+  CRAWLING
+  ANALYZING
+  GENERATING_REPORT
+  COMPLETED
+  FAILED
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum FindingCategory {
+  VISUAL
+  COPYWRITING
+  UX
+  CONVERSION
+  SEO
+  IMAGES
+  PERFORMANCE
+  ACCESSIBILITY
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum Effort {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  INCOMPLETE
+  TRIALING
+}
