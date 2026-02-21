@@ -71,7 +71,7 @@ export default function AnalysisResultsPage() {
               </CardHeader>
               <CardContent className="text-center">
                 <div className={`text-6xl font-bold ${getScoreColor(analysis.overallScore as number || 0)}`}>
-                  {analysis.overallScore || 0}
+                  {(analysis.overallScore as number) || 0}
                 </div>
                 <p className="text-muted-foreground mt-1">{getScoreLabel(analysis.overallScore as number || 0)}</p>
               </CardContent>

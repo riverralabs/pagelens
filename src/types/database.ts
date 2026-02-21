@@ -11,7 +11,7 @@ export type {
   Recommendation,
   Report,
   Subscription,
-} from '@prisma/client';
+} from '@/generated/prisma/client';
 
 export type {
   Plan,
@@ -23,4 +23,4 @@ export type {
   Priority,
   Effort,
   SubscriptionStatus,
-} from '@prisma/client';
+} from '@/generated/prisma/client';

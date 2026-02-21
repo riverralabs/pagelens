@@ -37,7 +37,7 @@ export default function AnalysesPage() {
                   <div className="flex items-center gap-3"><Clock className="h-4 w-4 text-muted-foreground" /><span className="text-sm">{formatDate(a.createdAt as string)}</span></div>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">{ANALYSIS_STATUS_LABELS[a.status as string]}</Badge>
-                    {a.overallScore && <span className={`font-bold ${getScoreColor(a.overallScore as number)}`}>{a.overallScore as number}/100</span>}
+                    {a.overallScore != null && <span className={`font-bold ${getScoreColor(a.overallScore as number)}`}>{String(a.overallScore)}/100</span>}
                   </div>
                 </div>
               </Link>

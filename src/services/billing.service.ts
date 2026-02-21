@@ -1,7 +1,7 @@
 import { stripe } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
 import { PLAN_LIMITS } from '@/lib/constants';
-import type { Plan } from '@prisma/client';
+import type { Plan } from '@/generated/prisma/client';
 
 export async function getOrCreateSubscription(userId: string) {
   let subscription = await prisma.subscription.findUnique({ where: { userId } });

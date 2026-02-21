@@ -90,7 +90,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
 
           await prisma.pageResult.update({
             where: { id: page.id },
-            data: { scores: pageScores, overallScore: pageOverall },
+            data: { scores: pageScores as unknown as Record<string, number>, overallScore: pageOverall },
           });
 
           allPageScores.push(pageScores);
@@ -114,7 +114,7 @@ export const analysisWorker = new Worker<AnalysisJobData>(
         where: { id: analysisId },
         data: {
           status: 'GENERATING_REPORT',
-          scores: aggregated,
+          scores: aggregated as unknown as Record<string, number>,
           overallScore,
         },
       });

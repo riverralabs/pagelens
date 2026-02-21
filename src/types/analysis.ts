@@ -1,4 +1,4 @@
-import type { FindingCategory, Severity, Priority, Effort } from '@prisma/client';
+import type { FindingCategory, Severity, Priority, Effort } from '@/generated/prisma/client';
 
 export interface AnalysisScores {
   visual: number;

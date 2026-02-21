@@ -115,7 +115,7 @@ export default function ProjectPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">{ANALYSIS_STATUS_LABELS[analysis.status as string]}</Badge>
-                      {analysis.overallScore && <span className={`font-bold ${getScoreColor(analysis.overallScore as number)}`}>{analysis.overallScore as number}/100</span>}
+                      {analysis.overallScore != null && <span className={`font-bold ${getScoreColor(analysis.overallScore as number)}`}>{String(analysis.overallScore)}/100</span>}
                     </div>
                   </div>
                 </Link>

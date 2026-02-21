@@ -54,7 +54,7 @@ export const crawlWorker = new Worker<CrawlJobData>(
               path: result.path,
               title: result.title,
               statusCode: result.statusCode,
-              contentJson: result.content as unknown as Record<string, unknown>,
+              contentJson: JSON.parse(JSON.stringify(result.content)),
               pageType: classifyPageType(result.content, result.path),
             },
           });

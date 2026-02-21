@@ -66,7 +66,7 @@ export default function GraderPage() {
                 <CardTitle>Overall Score</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
-                <div className={`text-6xl font-bold ${getScoreColor(result.overallScore as number)}`}>{result.overallScore as number}</div>
+                <div className={`text-6xl font-bold ${getScoreColor(result.overallScore as number)}`}>{String(result.overallScore)}</div>
                 <p className="text-muted-foreground mt-1">{getScoreLabel(result.overallScore as number)}</p>
               </CardContent>
             </Card>

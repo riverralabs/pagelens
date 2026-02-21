@@ -52,8 +52,10 @@ export async function POST(request: NextRequest) {
           data: {
             status: sub.status === 'active' ? 'ACTIVE' : sub.status === 'past_due' ? 'PAST_DUE' : 'CANCELLED',
             cancelAtPeriodEnd: sub.cancel_at_period_end,
-            currentPeriodStart: new Date(sub.current_period_start * 1000),
-            currentPeriodEnd: new Date(sub.current_period_end * 1000),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            currentPeriodStart: new Date(((sub as any).current_period_start as number) * 1000),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            currentPeriodEnd: new Date(((sub as any).current_period_end as number) * 1000),
           },
         });
         break;
